@@ -36,10 +36,10 @@ class TweetCollector:
     # input your credentials here
 
 
-consumer_key = "shZTrTNRUs7R0G7eu7XkCwg9m"
-consumer_secret = "a8BkEyIQlMG3dVFs0skKq9M0js2Rf3uec2PiyRxCtjYmJJkWPx"
-access_token = "3160187665-W2JKh8WsCe5UMCZ6BvVrwxkNtf3eTDupgpoG2d4"
-access_token_secret = "0arP27lC04llKEP3wExZYh01kCqLzfIjXgQuMuyiDIkyZ"
+consumer_key = ""
+consumer_secret = ""
+access_token = ""
+access_token_secret = ""
 bucket_name = "info7374-twitter-analytics"
 
 
