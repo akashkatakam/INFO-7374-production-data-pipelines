@@ -1,4 +1,3 @@
-
 # Copyright 2010-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # This file is licensed under the Apache License, Version 2.0 (the "License").
@@ -10,7 +9,6 @@
 # This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
 # OF ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
-
 import logging
 import boto3
 from botocore.exceptions import ClientError
@@ -29,55 +27,29 @@ def put_object(dest_bucket_name, dest_object_name, src_data):
     False
     """
 
-    # Construct Body= parameter
-    if isinstance(src_data, bytes):
-        object_data = src_data
-    elif isinstance(src_data, str):
-        try:
-            object_data = open(src_data, 'rb')
-            # possible FileNotFoundError/IOError exception
-        except Exception as e:
-            logging.error(e)
-            return False
-    else:
-        logging.error('Type of ' + str(type(src_data)) +
-                      ' for the argument \'src_data\' is not supported.')
-        return False
+    # # Construct Body= parameter
+    # if isinstance(src_data, bytes):
+    #     object_data = src_data
+    # elif isinstance(src_data, str):
+    #     try:
+    #         object_data = open(src_data, 'rb')
+    #         # possible FileNotFoundError/IOError exception
+    #     except Exception as e:
+    #         logging.error(e)
+    #         return False
+    # else:
+    #     logging.error('Type of ' + str(type(src_data)) +
+    #                   ' for the argument \'src_data\' is not supported.')
+    #     return False
 
     # Put the object
     s3 = boto3.client('s3')
     try:
-        s3.put_object(Bucket=dest_bucket_name, Key=dest_object_name, Body=object_data)
+        s3.put_object(Bucket=dest_bucket_name, Key=dest_object_name, Body=src_data)
     except ClientError as e:
         # AllAccessDisabled error == bucket not found
         # NoSuchKey or InvalidRequest error == (dest bucket/obj == src bucket/obj)
         logging.error(e)
         return False
-    finally:
-        if isinstance(src_data, str):
-            object_data.close()
+
     return True
-
-
-def main():
-    """Exercise put_object()"""
-
-    # Assign these values before running the program
-    test_bucket_name = 'BUCKET_NAME'
-    test_object_name = 'OBJECT_NAME'
-    filename = 'C:\\path\\to\\file.ext'
-    # Alternatively, specify object contents using bytes.
-    # filename = b'This is the data to store in the S3 object.'
-
-    # Set up logging
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(levelname)s: %(asctime)s: %(message)s')
-
-    # Put the object into the bucket
-    success = put_object(test_bucket_name, test_object_name, filename)
-    if success:
-        logging.info(f'Added {test_object_name} to {test_bucket_name}')
-
-
-if __name__ == '__main__':
-    main()
