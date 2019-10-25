@@ -1,0 +1,173 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "fetchingTweetsLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "fetchingTweetsLambdaRole",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+          "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+        ]
+      }
+    },
+    "fetchTweets": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "fetch_tweets",
+        "Handler": "ResetPasswordLambda::handleRequest",
+        "Role": {
+          "Fn::GetAtt": [
+            "fetchingTweetsLambdaRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": "info7374-twitter-analytics",
+          "S3Key": "scripts/fetchtweets.zip"
+        },
+        "Runtime": "python3.7",
+        "MemorySize": 256,
+        "Timeout": "900"
+      }
+    },
+    "GlueRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "process-tweets-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "glue.amazonaws.com",
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole",
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        ]
+      }
+    },
+    "PartitionDatabase": {
+      "Type": "AWS::Glue::Database",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseInput": {
+          "Name": "twitter-analytics-db",
+          "Description": "Database for Glue Partition twitter analytics"
+        }
+      }
+    },
+    "JSONClassifier": {
+      "Type": "AWS::Glue::Classifier",
+      "Properties": {
+        "JsonClassifier": {
+          "Name": "json_classifier",
+          "JsonPath" : "$[*]"
+        }
+      }
+    },
+    "RawCrawler": {
+      "Type": "AWS::Glue::Crawler",
+      "Properties": {
+        "Name": "raw_crawler",
+        "Role": {
+          "Fn::GetAtt": [
+            "GlueRole",
+            "Arn"
+          ]
+        },
+        "DatabaseName": {
+          "Ref": "PartitionDatabase"
+        },
+        "Classifiers": [
+          {
+            "Ref": "JSONClassifier"
+          }
+        ],
+        "Targets": {
+          "S3Targets": [
+            {
+              "Path": "info7374-twitter-analytics/Raw"
+            }
+          ]
+        }
+      }
+    },
+    "PreProcessJob": {
+      "Type": "AWS::Glue::Job",
+      "Properties": {
+        "Command": {
+          "Name": "glueetl",
+          "PythonVersion" : "3",
+          "ScriptLocation": "s3://info7374-twitter-analytics/scripts/de_dup.py"
+        },
+        "GlueVersion" : "1.0",
+        "DefaultArguments" : {
+          "--job-bookmark-option": "job-bookmark-enable"
+        },
+        "ExecutionProperty": {
+          "MaxConcurrentRuns": 2
+        },
+        "MaxRetries": 0,
+        "Name": "pre_process_data",
+        "Role": {
+          "Ref": "GlueRole"
+        }
+      }
+    },
+    "ProcessedCrawler": {
+      "Type": "AWS::Glue::Crawler",
+      "Properties": {
+        "Name": "process_crawler",
+        "Role": {
+          "Fn::GetAtt": [
+            "GlueRole",
+            "Arn"
+          ]
+        },
+        "DatabaseName": {
+          "Ref": "PartitionDatabase"
+        },
+        "Targets": {
+          "S3Targets": [
+            {
+              "Path": "info7374-twitter-analytics/Processed"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
