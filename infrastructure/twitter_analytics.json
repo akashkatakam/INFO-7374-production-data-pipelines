@@ -45,7 +45,6 @@
           "S3Key": "scripts/fetchtweets.zip"
         },
         "Runtime": "python3.7",
-        "ReservedConcurrentExecutions": 5,
         "MemorySize": 256,
         "Timeout": "900"
       }
@@ -86,7 +85,87 @@
         },
         "DatabaseInput": {
           "Name": "twitter-analytics-db",
-          "Description": "Database for Glue Partition blog post example"
+          "Description": "Database for Glue Partition twitter analytics"
+        }
+      }
+    },
+    "JSONClassifier": {
+      "Type": "AWS::Glue::Classifier",
+      "Properties": {
+        "JsonClassifier": {
+          "Name": "json_classifier",
+          "JsonPath" : "$[*]"
+        }
+      }
+    },
+    "RawCrawler": {
+      "Type": "AWS::Glue::Crawler",
+      "Properties": {
+        "Name": "raw_crawler",
+        "Role": {
+          "Fn::GetAtt": [
+            "GlueRole",
+            "Arn"
+          ]
+        },
+        "DatabaseName": {
+          "Ref": "PartitionDatabase"
+        },
+        "Classifiers": [
+          {
+            "Ref": "JSONClassifier"
+          }
+        ],
+        "Targets": {
+          "S3Targets": [
+            {
+              "Path": "info7374-twitter-analytics/Raw"
+            }
+          ]
+        }
+      }
+    },
+    "PreProcessJob": {
+      "Type": "AWS::Glue::Job",
+      "Properties": {
+        "Command": {
+          "Name": "glueetl",
+          "PythonVersion" : "3",
+          "ScriptLocation": "s3://info7374-twitter-analytics/scripts/de_dup.py"
+        },
+        "GlueVersion" : "1.0",
+        "DefaultArguments" : {
+          "--job-bookmark-option": "job-bookmark-enable"
+        },
+        "ExecutionProperty": {
+          "MaxConcurrentRuns": 2
+        },
+        "MaxRetries": 0,
+        "Name": "pre_process_data",
+        "Role": {
+          "Ref": "GlueRole"
+        }
+      }
+    },
+    "ProcessedCrawler": {
+      "Type": "AWS::Glue::Crawler",
+      "Properties": {
+        "Name": "process_crawler",
+        "Role": {
+          "Fn::GetAtt": [
+            "GlueRole",
+            "Arn"
+          ]
+        },
+        "DatabaseName": {
+          "Ref": "PartitionDatabase"
+        },
+        "Targets": {
+          "S3Targets": [
+            {
+              "Path": "info7374-twitter-analytics/Processed"
+            }
+          ]
         }
       }
     }
