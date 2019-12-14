@@ -1,0 +1,37 @@
+<!doctype html>
+<title>Welcome to Car Number Plate Detection App <a href="static/css/main.css"/> </title>
+<h3>Car Number Plate Detection</h3>
+<p> Please upload images of car number plates. Image formats only JPEG, PNG is allowed.</p>
+<p>
+	{% with messages = get_flashed_messages() %}
+	  {% if messages %}
+		<ul class=flashes>
+		{% for message in messages %}
+		  <li>{{ message }}</li>
+		{% endfor %}
+		</ul>
+	  {% endif %}
+	{% endwith %}
+</p>
+<form method="post" action="/" enctype="multipart/form-data">
+    <dl>
+		<p>
+			<input type="file" name="file" autocomplete="off" required>
+		</p>
+    </dl>
+    <p>
+		<input type="submit" , name="upload" value="Upload">
+        <button type="button">Infer</button>
+	</p>
+    <div>
+          <h3>These are your uploaded files:</h3>
+          <p>Click on the filename to get inference it.</p>
+          <ul>
+            {% for item in contents %}
+              <li>
+                <a href="/infer/{{ item.Key }}"> {{ item.Key }} </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+</form>
