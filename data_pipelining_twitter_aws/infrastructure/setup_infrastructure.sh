@@ -9,7 +9,7 @@ fi
 
 BucketName="info7374_data_pipelining.${2}"
 
-StackID=$(aws cloudformation create-stack --stack-name $1 --template-body file://twitter_analytics.json --capabilities CAPABILITY_NAMED_IAM --parameters ParameterKey=S3Bucket,ParameterValue="${BucketName}"  |grep StackId)
+StackID=$(aws cloudformation create-stack --stack-name $1 --template-body file://twitter_analytics.json --capabilities CAPABILITY_NAMED_IAM  |grep StackId)
 if [[ $? -eq 0 ]]; then
     stackCompletion=$(aws cloudformation wait stack-create-complete --stack-name "$1")
         if [ $? -eq 0 ]; then
